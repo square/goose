@@ -1,11 +1,11 @@
-{{summary}}
+{{synopsis.current_summary}}
 
 # Instructions
 
 Prepare a plan that an agent will use to followup to the request described above. Your plan
 will be carried out by an agent with access to the following tools:
 
-{% for tool in tools %}
+{% for tool in exchange.tools %}
 {{tool.name}}: {{tool.description}}{% endfor %}
 
 If the request is simple, such as a greeting or a request for information or advice, the plan can simply be:
@@ -22,6 +22,20 @@ Your plan needs to use the following format, but can have any number of tasks.
     {"description": "the second task here"},
 ]
 ```
+
+
+# Context
+
+The current state of the agent is:
+
+{{system.info()}}
+
+The agent already has access to content of the following files, your plan does not need to include finding or reading these.
+However if a file or code object is not here but needs to be viewed to complete the goal, include plan steps to
+use `rg` (ripgrep) to find the relevant references.
+
+{% for file in system.active_files %}
+{{file.path}}{% endfor %}
 
 # Examples
 

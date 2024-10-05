@@ -1,15 +1,16 @@
-from goose.synopsis.toolkit import active_files, get_os
+import os
+from exchange.content import Text
+from exchange.exchange import Exchange
+from exchange.message import Message
+from exchange.moderators import Moderator
+from exchange.moderators.passive import PassiveModerator
 from exchange.moderators.truncate import ContextTruncate
 from goose._logger import get_logger
-from goose.utils.ask import ask_an_ai
-from exchange.moderators import Moderator
-from exchange.exchange import Exchange
-from exchange.content import Text
-from exchange.message import Message
-from exchange.moderators.passive import PassiveModerator
+from goose.synopsis.system import system
+
 
 class Synopsis(Moderator):
-    """ Synopsis rewrites the chat into a single input message after every reply
+    """Synopsis rewrites the chat into a single input message after every reply
 
     The goal of synopsis is to remove history artifacts that eat up the context budget
     and provide opportunities for the model to attend to the wrong content.
@@ -30,19 +31,20 @@ class Synopsis(Moderator):
     could revisit how that works, because this applications shows some limitations in how the
     goose state is managed.
     """
+
     def __init__(self) -> None:
         super().__init__()
         self.current_summary = ""
         self.current_plan = ""
         self.originals = []
 
-    def rewrite(self, exchange: Exchange):
+    def rewrite(self, exchange: Exchange) -> None:
         logging = get_logger()
 
         # Get the last message, which would be either a user text or a user tool use
         last_message: Message = exchange.messages[-1]
 
-        # The first message is the synopsis, after that we might have a number of tool usage, until we hit a new user message
+        # The first message is the synopsis, there could be multiple tool usages until we encounter a new user message
         # [synopsis, tool_use, tool_result, tool_use, tool_result, ..., assistant_message, user_message]
 
         logging.info([(message.role, message.content[0].__class__) for message in exchange.messages])
@@ -71,36 +73,33 @@ class Synopsis(Moderator):
             logging.info("system only update")
             exchange.messages[0] = self.get_synopsis(exchange)
 
-    def get_synopsis(self, exchange, summarize=False, plan=False):
-        # Always refresh system and files
-        os_context = get_os()
-        file_context = ""
-        if active_files:
-            file_context = "# Relevant Files\n" + "\n".join(file.context for file in active_files.values())
-
+    def get_synopsis(self, exchange: Exchange, summarize: bool = False, plan: bool = False) -> Message:
         if summarize:
             self.current_summary = self.summarize(exchange)
 
         if plan:
             self.current_plan = self.plan(exchange)
 
-
-        synopsis = Message.user('\n\n'.join((os_context, file_context, self.current_summary, self.current_plan)))
-        with open('synopsis.md', 'w') as f:
+        synopsis = Message.load("synopsis.md", synopsis=self, system=system)
+        with open("synopsis.md", "w") as f:
             f.write(synopsis.text)
 
         return synopsis
 
-    def summarize(self, exchange):
-        message = Message.load("summarize.md", tools=exchange.tools, messages=self.originals)
-        exchange = exchange.replace(moderator=ContextTruncate(), tools=(), system='', messages=[])
+    def summarize(self, exchange: Exchange) -> str:
+        logger = get_logger()
+        message = Message.load("summarize.md", synopsis=self, messages=self.originals, exchange=exchange, system=system)
+        logger.warning(message.text)
+        model = os.environ.get("SUMMARIZER", "gpt-4o")
+        exchange = exchange.replace(moderator=ContextTruncate(), tools=(), system="", messages=[], model=model)
         exchange.add(message)
         return exchange.generate().text
 
-    def plan(self, exchange):
+    def plan(self, exchange: Exchange) -> str:
         logger = get_logger()
-        message = Message.load("plan.md", tools=exchange.tools, summary=self.current_summary)
+        message = Message.load("plan.md", synopsis=self, messages=self.originals, exchange=exchange, system=system)
         logger.warning(message.text)
-        exchange = exchange.replace(moderator=PassiveModerator(), tools=(), system='', messages=[])
+        model = os.environ.get("PLANNER", "gpt-4o")
+        exchange = exchange.replace(moderator=PassiveModerator(), tools=(), system="", messages=[], model=model)
         exchange.add(message)
         return exchange.generate().text

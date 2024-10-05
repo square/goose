@@ -2,7 +2,7 @@ import os
 import re
 import subprocess
 import time
-from typing import Optional
+from typing import Mapping, Optional
 
 from goose.notifier import Notifier
 from goose.utils.ask import ask_an_ai
@@ -48,8 +48,13 @@ def keep_unsafe_command_prompt(command: str) -> bool:
     return Confirm.ask(message, default=True)
 
 
-
-def shell(command: str, notifier: Notifier, exchange_view: ExchangeView,  cwd: Optional[str] = None) -> str:
+def shell(
+    command: str,
+    notifier: Notifier,
+    exchange_view: ExchangeView,
+    cwd: Optional[str] = None,
+    env: Optional[Mapping[str, str]] = None,
+) -> str:
     """Execute a command on the shell
 
     This handles
@@ -84,6 +89,7 @@ def shell(command: str, notifier: Notifier, exchange_view: ExchangeView,  cwd: O
         stderr=subprocess.STDOUT,
         text=True,
         cwd=cwd,
+        env=env,
     )
     # this enables us to read lines without blocking
     os.set_blocking(proc.stdout.fileno(), False)

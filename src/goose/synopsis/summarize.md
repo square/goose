@@ -6,21 +6,20 @@ Messages sent by the AI are marked with the "assistant" role.
 When the AI requests a tool be called, there will be a tool_use and a corresponding tool_result.
 
 These are the tools available to the agent:
-{% for tool in tools %}
+{% for tool in exchange.tools %}
 {{tool.name}}: {{tool.description}}{% endfor %}
 
 # Messages
-
 {% for message in messages %}
 {{message.summary}}
 {% endfor %}
 
 # Instructions
 
-Summarize the conversation so far. Highlight all the relevant details, making sure to include any 
-relevant tool use and result content that is important for the conversation.  
+Summarize the conversation so far. Highlight the relevant details, making sure to include any
+relevant tool use and result content that is important for the conversation.
 
-**However**, to preserve space, you can omit some details:
+To preserve space, you can omit some details:
 - File content details from tools like read and write file: they will be included separately
 - Errors that have already been resolved: provide only the current working details
 

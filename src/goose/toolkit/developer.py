@@ -1,17 +1,12 @@
 import os
-import re
-import subprocess
-import time
 from pathlib import Path
 from typing import Dict, List
 
 from exchange import Message
 from goose.toolkit.base import Toolkit, tool
 from goose.toolkit.utils import get_language, render_template, RULEPREFIX, RULESTYLE
-from goose.utils.ask import ask_an_ai
 from goose.utils.shell import shell
 from rich.markdown import Markdown
-from rich.prompt import Confirm
 from rich.table import Table
 from rich.rule import Rule
 
