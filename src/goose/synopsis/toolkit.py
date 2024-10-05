@@ -14,8 +14,8 @@ from goose.toolkit.utils import get_language
 
 active_files = {}
 
-def add_file(path: str, content: str, lang: str):
-    active_files[path] = File(path, content, lang)
+def add_file(path: str, content: str, language: str):
+    active_files[path] = File(path, content, language)
 
 
 def remove_file(path: str):
@@ -28,7 +28,15 @@ cwd = os.getcwd()
 class File:
     path: str
     content: str
-    lang: str
+    language: str
+
+    @property
+    def context(self):
+        return f"""\
+{self.path}
+```{self.language}
+{self.content}
+```"""
 
 
 def get_os():
@@ -70,7 +78,7 @@ class SynopsisDeveloper(Developer):
         self.notifier.log(Markdown(f"```\ncat {path}\n```"))
         # Record the last read timestamp
         self.timestamps[path] = os.path.getmtime(path)
-        add_file(path=path, content=content, lang=language)
+        add_file(path=path, content=content, language=language)
 
         return f"```{language}\n{content}\n```"
 
@@ -84,8 +92,8 @@ class SynopsisDeveloper(Developer):
             path (str): The destination file path, in the format "path/to/file.txt"
             content (str): The raw file content.
         """  # noqa: E501
-        language = get_language(Path(path))
-        add_file(path=path, content=content, lang=language)
+        language = get_language(path)
+        add_file(path=path, content=content, language=language)
         return super().write_file(path, content)
 
 
@@ -103,7 +111,7 @@ class SynopsisDeveloper(Developer):
         """
         self.notifier.status(f"editing {path}")
         _path = Path(path)
-        language = get_language(_path)
+        language = get_language(path)
 
         content = _path.read_text()
 
@@ -113,7 +121,7 @@ class SynopsisDeveloper(Developer):
             raise ValueError("The before content was not found in file, be careful that you recreate it exactly.")
 
         content = content.replace(before, after)
-        add_file(path=path, content=content, lang=language)
+        add_file(path=path, content=content, language=language)
         _path.write_text(content)
 
         output = f"""
@@ -145,14 +153,16 @@ class SynopsisDeveloper(Developer):
         return "Completed"
 
 
-    @tool
-    def change_dir(self, path: str) -> str:
-        """Change the directory to the specified path
-
-        Args:
-            path (str): The new dir path, in the format "path/to/dir"
-        """
-        global cwd
-        cwd = path
-        self.cwd = path
-        return path
+    #@tool
+    #def change_dir(self, path: str) -> str:
+    #    """Change the directory to the specified path
+    #
+    #    Args:
+    #        path (str): The new dir path, in the format "path/to/dir"
+    #    """
+    #    self.notifier.log(Rule(RULEPREFIX + "shell", style=RULESTYLE, align="left"))
+    #    self.notifier.log(Markdown(f"cd {path}"))
+    #    global cwd
+    #    cwd = path
+    #    self.cwd = path
+    #    return path
