@@ -38,6 +38,7 @@ class Developer(Toolkit):
     def __init__(self, *args: object, **kwargs: Dict[str, object]) -> None:
         super().__init__(*args, **kwargs)
         self.timestamps: Dict[str, float] = {}
+        self.cwd = os.getcwd()
 
     def system(self) -> str:
         """Retrieve system configuration details for developer"""
@@ -54,7 +55,6 @@ class Developer(Toolkit):
             system_prompt = f"{system_prompt}\n\nHints:\n{hints_text}"
         return system_prompt
 
-    @tool
     def update_plan(self, tasks: List[dict]) -> List[dict]:
         """
         Update the plan by overwriting all current tasks
@@ -190,6 +190,7 @@ class Developer(Toolkit):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
+            cwd=self.cwd,
         )
         # this enables us to read lines without blocking
         os.set_blocking(proc.stdout.fileno(), False)
