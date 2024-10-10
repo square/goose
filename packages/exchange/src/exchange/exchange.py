@@ -4,6 +4,7 @@ from copy import deepcopy
 from typing import Any, Dict, List, Mapping, Tuple
 
 from attrs import define, evolve, field, Factory
+from exchange.langfuse_wrapper import observe_wrapper
 from tiktoken import get_encoding
 
 from exchange.checkpoint import Checkpoint, CheckpointData
@@ -127,6 +128,7 @@ class Exchange:
 
         return response
 
+    @observe_wrapper()
     def call_function(self, tool_use: ToolUse) -> ToolResult:
         """Call the function indicated by the tool use"""
         tool = self._toolmap.get(tool_use.name)
